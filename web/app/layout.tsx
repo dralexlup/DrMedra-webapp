@@ -1,6 +1,7 @@
 import React from 'react'
 import './globals.css'
 import { AuthProvider } from '../contexts/AuthContext'
+import { ThemeProvider } from '../contexts/ThemeContext'
 import PWAInstaller from '../components/PWAInstaller'
 
 export const metadata = {
@@ -59,10 +60,12 @@ export default function RootLayout({
         <link rel="shortcut icon" href="/favicon.ico" />
       </head>
       <body>
-        <AuthProvider>
-          {children}
-          <PWAInstaller />
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            {children}
+            <PWAInstaller />
+          </AuthProvider>
+        </ThemeProvider>
         
         {/* Service Worker Registration */}
         <script

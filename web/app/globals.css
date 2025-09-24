@@ -14,10 +14,31 @@
   --text-primary: #1e293b;
   --text-secondary: #64748b;
   --border-color: #e2e8f0;
+  --background: #ffffff;
+  --card-background: #ffffff;
+  --body-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   --radius: 0.5rem;
+}
+
+[data-theme="dark"] {
+  --primary-color: #3b82f6;
+  --primary-hover: #2563eb;
+  --secondary-color: #374151;
+  --success-color: #10b981;
+  --danger-color: #ef4444;
+  --warning-color: #f59e0b;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --border-color: #4b5563;
+  --background: #111827;
+  --card-background: #1f2937;
+  --body-bg: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%);
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.4);
 }
 
 html {
@@ -28,8 +49,9 @@ html {
 }
 
 body {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--body-bg);
   min-height: 100vh;
+  transition: background 0.3s ease;
 }
 
 .container {
@@ -39,7 +61,7 @@ body {
 }
 
 .card {
-  background: white;
+  background: var(--card-background);
   border-radius: var(--radius);
   box-shadow: var(--shadow-md);
   padding: 2rem;
@@ -106,6 +128,16 @@ body {
 
 .btn-danger:hover:not(:disabled) {
   background: #dc2626;
+  transform: translateY(-1px);
+}
+
+.btn-warning {
+  background: var(--warning-color);
+  color: white;
+}
+
+.btn-warning:hover:not(:disabled) {
+  background: #d97706;
   transform: translateY(-1px);
 }
 
@@ -298,9 +330,12 @@ body {
 .mt-8 { margin-top: 2rem; }
 
 .flex { display: flex; }
+.flex-wrap { flex-wrap: wrap; }
 .items-center { align-items: center; }
 .justify-center { justify-content: center; }
 .justify-between { justify-content: space-between; }
+.justify-end { justify-content: flex-end; }
+.gap-1 { gap: 0.25rem; }
 .gap-2 { gap: 0.5rem; }
 .gap-4 { gap: 1rem; }
 

@@ -1,13 +1,15 @@
-const BASE = process.env.NEXT_PUBLIC_API_BASE!;
+const BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
 
 export async function api(path: string, method = "GET", body?: any, token?: string) {
+  const isFormData = body instanceof FormData;
+  
   const res = await fetch(`${BASE}${path}`, {
     method,
     headers: {
-      "Content-Type": "application/json",
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...(token ? { Authorization: `Bearer ${token}` } : {})
     },
-    body: body ? JSON.stringify(body) : undefined,
+    body: isFormData ? body : (body ? JSON.stringify(body) : undefined),
     cache: "no-store"
   });
   if (!res.ok) throw new Error(await res.text());

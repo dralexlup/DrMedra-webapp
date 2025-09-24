@@ -1,7 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
+import { exportPatientData, downloadAsJSON, downloadAsPDF } from "../../lib/export";
 import { useAuth, withAuth } from "../../contexts/AuthContext";
+import { useTheme } from "../../contexts/ThemeContext";
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -11,7 +13,10 @@ function Patients() {
   const [mrn, setMrn] = useState("");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
+  const [exportingPatients, setExportingPatients] = useState<Set<string>>(new Set());
+  const [deletingPatients, setDeletingPatients] = useState<Set<string>>(new Set());
   const { user, token, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const router = useRouter();
 
   useEffect(() => {
@@ -70,6 +75,52 @@ function Patients() {
     }
   };
 
+  async function exportPatient(patientId: string, format: 'json' | 'txt') {
+    if (!token) return;
+    
+    setExportingPatients(prev => new Set([...prev, patientId]));
+    
+    try {
+      const data = await exportPatientData(patientId, token);
+      
+      if (format === 'json') {
+        downloadAsJSON(data);
+      } else {
+        downloadAsPDF(data);
+      }
+    } catch (error) {
+      alert('Failed to export patient data');
+    } finally {
+      setExportingPatients(prev => {
+        const updated = new Set(prev);
+        updated.delete(patientId);
+        return updated;
+      });
+    }
+  }
+
+  async function deletePatient(patientId: string, patientName: string) {
+    if (!token) return;
+    
+    const confirmed = window.confirm(`Are you sure you want to delete patient "${patientName}"? This will also delete all associated chats and cannot be undone.`);
+    if (!confirmed) return;
+    
+    setDeletingPatients(prev => new Set([...prev, patientId]));
+    
+    try {
+      await api(`/patients/${patientId}`, 'DELETE', undefined, token);
+      setPatients(prev => prev.filter(p => p.id !== patientId));
+    } catch (error) {
+      alert('Failed to delete patient');
+    } finally {
+      setDeletingPatients(prev => {
+        const updated = new Set(prev);
+        updated.delete(patientId);
+        return updated;
+      });
+    }
+  }
+
   return (
     <div className="container">
       <div className="mb-6">
@@ -85,6 +136,14 @@ function Patients() {
             )}
           </div>
           <div className="flex gap-2">
+            <button
+              onClick={toggleTheme}
+              className="btn btn-secondary"
+              style={{ minWidth: 'auto', padding: '0.5rem' }}
+              title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            >
+              {theme === 'light' ? '🌙' : '☀️'}
+            </button>
             <button 
               className="btn btn-success"
               onClick={newGeneralChat}
@@ -198,7 +257,7 @@ function Patients() {
                       )}
                     </div>
                     
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       <Link 
                         href={`/patients/${p.id}`}
                         className="btn btn-secondary"
@@ -209,10 +268,39 @@ function Patients() {
                       <button 
                         className="btn btn-primary"
                         onClick={() => newChat(p.id)}
-                        style={{ minWidth: '100px', fontSize: '0.75rem' }}
+                        style={{ minWidth: '80px', fontSize: '0.75rem' }}
                       >
                         💬 Chat
                       </button>
+                      <div className="flex gap-1">
+                        <button 
+                          className="btn btn-success"
+                          onClick={() => exportPatient(p.id, 'json')}
+                          disabled={exportingPatients.has(p.id)}
+                          style={{ minWidth: '70px', fontSize: '0.75rem', padding: '0.5rem' }}
+                          title="Export as JSON"
+                        >
+                          {exportingPatients.has(p.id) ? '🔄' : '📄 JSON'}
+                        </button>
+                        <button 
+                          className="btn btn-warning"
+                          onClick={() => exportPatient(p.id, 'txt')}
+                          disabled={exportingPatients.has(p.id)}
+                          style={{ minWidth: '70px', fontSize: '0.75rem', padding: '0.5rem' }}
+                          title="Export as Text"
+                        >
+                          {exportingPatients.has(p.id) ? '🔄' : '📋 TXT'}
+                        </button>
+                        <button 
+                          className="btn btn-danger"
+                          onClick={() => deletePatient(p.id, p.name)}
+                          disabled={deletingPatients.has(p.id)}
+                          style={{ minWidth: '70px', fontSize: '0.75rem', padding: '0.5rem' }}
+                          title="Delete Patient"
+                        >
+                          {deletingPatients.has(p.id) ? '🔄' : '🗑️ DEL'}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>

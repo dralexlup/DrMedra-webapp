@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from 'next/navigation';
 import { api, stream } from "../../../lib/api";
 import Link from 'next/link';
 
@@ -74,6 +75,10 @@ export default function Chat({ params }: { params: { chatId: string } }) {
   const [streaming, setStreaming] = useState(false);
   const [doctorName, setDoctorName] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [deletingChat, setDeletingChat] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [themeLoaded, setThemeLoaded] = useState(false);
+  const router = useRouter();
   const chatId = params.chatId;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -86,6 +91,15 @@ export default function Chat({ params }: { params: { chatId: string } }) {
     if (!token) { location.href="/login"; return; }
     const savedName = localStorage.getItem("name");
     if (savedName) setDoctorName(savedName);
+    
+    // Load theme
+    const savedTheme = localStorage.getItem('theme');
+    const systemPreference = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const initialTheme = savedTheme as 'light' | 'dark' || systemPreference;
+    
+    setTheme(initialTheme);
+    document.documentElement.setAttribute('data-theme', initialTheme);
+    setThemeLoaded(true);
     
     // Load current chat messages
     api(`/messages?chat_id=${chatId}`,"GET",undefined, token!).then(setMessages);
@@ -103,6 +117,13 @@ export default function Chat({ params }: { params: { chatId: string } }) {
       setCurrentChatInfo(currentChat);
     });
   }, [chatId, token]);
+  
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+  };
 
   useEffect(() => {
     scrollToBottom();
@@ -222,6 +243,29 @@ export default function Chat({ params }: { params: { chatId: string } }) {
     setImage(null);
   };
 
+  const deleteCurrentChat = async () => {
+    if (!token || !currentChatInfo) return;
+    
+    const chatTitle = currentChatInfo.title || 'this conversation';
+    const confirmed = window.confirm(`Are you sure you want to delete ${chatTitle}? This cannot be undone.`);
+    if (!confirmed) return;
+    
+    setDeletingChat(true);
+    
+    try {
+      await api(`/chats/${chatId}`, 'DELETE', undefined, token);
+      // Redirect to appropriate page based on chat type
+      if (currentChatInfo.is_general) {
+        router.push('/');
+      } else {
+        router.push('/patients');
+      }
+    } catch (error) {
+      alert('Failed to delete chat');
+      setDeletingChat(false);
+    }
+  };
+
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
       {/* Sidebar */}
@@ -235,9 +279,19 @@ export default function Chat({ params }: { params: { chatId: string } }) {
         <div style={{ padding: '1rem', height: '100%', display: 'flex', flexDirection: 'column' }}>
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-semibold">Conversations</h3>
-            <Link href="/" className="btn btn-secondary" style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}>
-              🏠 Home
-            </Link>
+            <div className="flex gap-1">
+              <button
+                onClick={toggleTheme}
+                className="btn btn-secondary"
+                style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', minWidth: 'auto' }}
+                title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+              >
+                {theme === 'light' ? '🌙' : '☀️'}
+              </button>
+              <Link href="/" className="btn btn-secondary" style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}>
+                🏠 Home
+              </Link>
+            </div>
           </div>
           
           <div style={{ flex: 1, overflowY: 'auto' }}>
@@ -317,6 +371,16 @@ export default function Chat({ params }: { params: { chatId: string } }) {
               </p>
             )}
           </div>
+          
+          <button
+            onClick={deleteCurrentChat}
+            disabled={deletingChat}
+            className="btn btn-danger"
+            style={{ padding: '0.5rem 0.75rem', fontSize: '0.875rem' }}
+            title="Delete Chat"
+          >
+            {deletingChat ? '🔄 Deleting...' : '🗑️ Delete'}
+          </button>
         </div>
 
         {/* Chat Messages */}

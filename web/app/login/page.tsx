@@ -25,7 +25,7 @@ export default function Login() {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      router.push('/patients');
+      router.push('/');
     }
   }, [user, router]);
 
@@ -66,7 +66,7 @@ export default function Login() {
     
     try {
       await login(email, password);
-      router.push('/patients');
+      router.push('/');
     } catch (err: any) {
       setError(err.message || "Login failed");
     } finally {
@@ -85,7 +85,7 @@ export default function Login() {
     
     try {
       await register(email, password, name);
-      router.push('/patients');
+      router.push('/');
     } catch (err: any) {
       setError(err.message || "Registration failed");
     } finally {
@@ -104,7 +104,7 @@ export default function Login() {
       localStorage.setItem('token', result.token);
       localStorage.setItem('name', result.name);
       
-      router.push('/patients');
+      router.push('/');
     } catch (err: any) {
       setError(err.message || 'Google sign-in failed');
     } finally {

@@ -28,24 +28,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Initialize auth state from localStorage
   useEffect(() => {
     const initializeAuth = async () => {
-      const storedToken = localStorage.getItem('token');
-      const storedName = localStorage.getItem('name');
-      
-      if (storedToken) {
-        try {
-          // Verify token is still valid by fetching user info
-          const userInfo = await api('/auth/me', 'GET', undefined, storedToken);
-          setToken(storedToken);
-          setUser(userInfo);
-        } catch (error) {
-          // Token is invalid, clear it
-          localStorage.removeItem('token');
-          localStorage.removeItem('name');
-          setToken(null);
-          setUser(null);
+      try {
+        const storedToken = localStorage.getItem('token');
+        const storedName = localStorage.getItem('name');
+        
+        if (storedToken) {
+          try {
+            // Verify token is still valid by fetching user info
+            const userInfo = await api('/auth/me', 'GET', undefined, storedToken);
+            setToken(storedToken);
+            setUser(userInfo);
+          } catch (error) {
+            // Token is invalid, clear it
+            localStorage.removeItem('token');
+            localStorage.removeItem('name');
+            setToken(null);
+            setUser(null);
+          }
         }
+      } catch (error) {
+        console.error('AuthContext: Error during initialization:', error);
+        // Clear everything on any error
+        localStorage.removeItem('token');
+        localStorage.removeItem('name');
+        setToken(null);
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     initializeAuth();

@@ -6,15 +6,36 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 export default function HomePage() {
-  const { user, token } = useAuth();
+  const { user, token, loading: authLoading } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [themeLoaded, setThemeLoaded] = useState(false);
+  
+  // Ensure this component only renders on the client to avoid hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+    
+    // Load theme from localStorage or system preference
+    const savedTheme = localStorage.getItem('theme');
+    const systemPreference = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const initialTheme = savedTheme as 'light' | 'dark' || systemPreference;
+    
+    setTheme(initialTheme);
+    document.documentElement.setAttribute('data-theme', initialTheme);
+    setThemeLoaded(true);
+  }, []);
+  
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+  };
   
   const handleChatClick = async () => {
-    console.log('Chat button clicked, user:', user, 'token:', token ? 'present' : 'missing');
-    
     if (!token) {
-      console.log('No token, redirecting to login');
       // Not logged in, go to login
       router.push('/login');
       return;
@@ -23,21 +44,52 @@ export default function HomePage() {
     // User is logged in, create a general chat
     setLoading(true);
     try {
-      console.log('Creating general chat...');
       const chat = await api('/chats/general', 'POST', {}, token);
-      console.log('Chat created successfully:', chat);
       router.push(`/chat/${chat.id}`);
     } catch (error) {
       console.error('Failed to create chat:', error);
-      alert('Failed to create chat: ' + error.message);
-      // Don't redirect to patients on error, let user try again
+      alert('Failed to create chat. Please try again.');
     } finally {
       setLoading(false);
     }
   };
+
+  // Show loading state while mounting, auth is loading, or theme is loading
+  if (!mounted || authLoading || !themeLoaded) {
+    return (
+      <div className="container">
+        <div className="card text-center fade-in" style={{ maxWidth: '600px', margin: '0 auto' }}>
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold mb-4" style={{ color: 'var(--primary-color)' }}>
+              🏥 DrMedra Medical Assistant
+            </h1>
+            <p className="text-lg" style={{ color: 'var(--text-secondary)' }}>
+              AI-powered medical consultations with real-time streaming responses
+            </p>
+            <div className="mt-4" style={{ color: 'var(--text-secondary)' }}>
+              Loading...
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container">
       <div className="card text-center fade-in" style={{ maxWidth: '600px', margin: '0 auto' }}>
+        {/* Theme toggle button */}
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={toggleTheme}
+            className="btn btn-secondary"
+            style={{ minWidth: 'auto', padding: '0.5rem' }}
+            title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+          >
+            {theme === 'light' ? '🌙' : '☀️'}
+          </button>
+        </div>
+        
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-4" style={{ color: 'var(--primary-color)' }}>
             🏥 DrMedra Medical Assistant
@@ -50,10 +102,6 @@ export default function HomePage() {
               Welcome back, Dr. {user.name}! 👨‍⚕️
             </div>
           )}
-          {/* Debug info - remove in production */}
-          <div className="text-xs mt-2" style={{ color: 'var(--text-secondary)' }}>
-            Debug: User {user ? 'logged in' : 'not logged in'}, Token {token ? 'present' : 'missing'}
-          </div>
         </div>
         
         <div className="grid grid-cols-2 gap-4 mb-6">
@@ -99,5 +147,5 @@ export default function HomePage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

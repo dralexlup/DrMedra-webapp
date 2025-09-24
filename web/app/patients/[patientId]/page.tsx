@@ -37,6 +37,10 @@ export default function PatientProfilePage({ params }: { params: { patientId: st
   const [profile, setProfile] = useState<PatientProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [doctorName, setDoctorName] = useState("");
+  const [deletingChats, setDeletingChats] = useState<Set<string>>(new Set());
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [themeLoaded, setThemeLoaded] = useState(false);
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
   useEffect(() => {
@@ -44,8 +48,24 @@ export default function PatientProfilePage({ params }: { params: { patientId: st
     const savedName = localStorage.getItem("name");
     if (savedName) setDoctorName(savedName);
     
+    // Load theme
+    const savedTheme = localStorage.getItem('theme');
+    const systemPreference = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const initialTheme = savedTheme as 'light' | 'dark' || systemPreference;
+    
+    setTheme(initialTheme);
+    document.documentElement.setAttribute('data-theme', initialTheme);
+    setThemeLoaded(true);
+    
     loadPatientProfile();
   }, []);
+  
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+  };
 
   const loadPatientProfile = async () => {
     try {
@@ -65,6 +85,55 @@ export default function PatientProfilePage({ params }: { params: { patientId: st
       location.href = `/chat/${c.id}`;
     } catch (error) {
       alert("Failed to create chat");
+    }
+  };
+
+  const deleteChat = async (chatId: string, chatTitle: string) => {
+    if (!token) return;
+    
+    const confirmed = window.confirm(`Are you sure you want to delete the chat "${chatTitle}"? This cannot be undone.`);
+    if (!confirmed) return;
+    
+    setDeletingChats(prev => new Set([...prev, chatId]));
+    
+    try {
+      await api(`/chats/${chatId}`, 'DELETE', undefined, token);
+      // Refresh the profile to update the chats list
+      await loadPatientProfile();
+    } catch (error) {
+      alert('Failed to delete chat');
+    } finally {
+      setDeletingChats(prev => {
+        const updated = new Set(prev);
+        updated.delete(chatId);
+        return updated;
+      });
+    }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !token) return;
+    
+    setUploadingFile(true);
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('patient_id', params.patientId);
+      
+      // Note: This endpoint may need to be implemented on the backend
+      await api(`/patients/${params.patientId}/files`, 'POST', formData, token);
+      
+      // Refresh the profile to show the new file
+      await loadPatientProfile();
+    } catch (error) {
+      console.error('File upload error:', error);
+      alert('Failed to upload file. This feature may need to be implemented on the backend.');
+    } finally {
+      setUploadingFile(false);
+      // Reset the file input
+      event.target.value = '';
     }
   };
 
@@ -107,6 +176,14 @@ export default function PatientProfilePage({ params }: { params: { patientId: st
             )}
           </div>
           <div className="flex gap-2">
+            <button
+              onClick={toggleTheme}
+              className="btn btn-secondary"
+              style={{ minWidth: 'auto', padding: '0.5rem' }}
+              title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            >
+              {theme === 'light' ? '🌙' : '☀️'}
+            </button>
             <button onClick={newChat} className="btn btn-success">
               💬 New Consultation
             </button>
@@ -181,12 +258,27 @@ export default function PatientProfilePage({ params }: { params: { patientId: st
                 <div key={chat.id} className="card" style={{ 
                   padding: '0.75rem',
                   background: 'var(--secondary-color)',
-                  border: '1px solid var(--border-color)',
-                  cursor: 'pointer'
-                }} onClick={() => location.href = `/chat/${chat.id}`}>
-                  <div className="font-semibold">{chat.title}</div>
-                  <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                    {new Date(chat.created_at).toLocaleDateString()}
+                  border: '1px solid var(--border-color)'
+                }}>
+                  <div className="flex justify-between items-center">
+                    <div 
+                      style={{ flex: 1, cursor: 'pointer' }}
+                      onClick={() => location.href = `/chat/${chat.id}`}
+                    >
+                      <div className="font-semibold">{chat.title}</div>
+                      <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                        {new Date(chat.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => deleteChat(chat.id, chat.title)}
+                      disabled={deletingChats.has(chat.id)}
+                      className="btn btn-danger"
+                      style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', minWidth: '50px' }}
+                      title="Delete Chat"
+                    >
+                      {deletingChats.has(chat.id) ? '🔄' : '🗑️'}
+                    </button>
                   </div>
                 </div>
               ))}
@@ -202,9 +294,29 @@ export default function PatientProfilePage({ params }: { params: { patientId: st
 
         {/* Uploaded Files */}
         <div className="card fade-in">
-          <h2 className="text-lg font-semibold mb-4">
-            📎 Uploaded Files ({profile.files.length})
-          </h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold">
+              📎 Uploaded Files ({profile.files.length})
+            </h2>
+            <div>
+              <input
+                type="file"
+                id="fileUpload"
+                style={{ display: 'none' }}
+                onChange={handleFileUpload}
+                accept="image/*,audio/*,.pdf,.doc,.docx,.txt"
+              />
+              <button
+                onClick={() => document.getElementById('fileUpload')?.click()}
+                disabled={uploadingFile}
+                className="btn btn-primary"
+                style={{ padding: '0.5rem', fontSize: '0.75rem' }}
+                title="Upload File"
+              >
+                {uploadingFile ? '🔄 Uploading...' : '📁 Upload'}
+              </button>
+            </div>
+          </div>
           
           {profile.files.length === 0 ? (
             <div className="text-center" style={{ padding: '2rem', color: 'var(--text-secondary)' }}>
