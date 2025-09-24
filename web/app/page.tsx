@@ -11,7 +11,10 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   
   const handleChatClick = async () => {
+    console.log('Chat button clicked, user:', user, 'token:', token ? 'present' : 'missing');
+    
     if (!token) {
+      console.log('No token, redirecting to login');
       // Not logged in, go to login
       router.push('/login');
       return;
@@ -20,12 +23,14 @@ export default function HomePage() {
     // User is logged in, create a general chat
     setLoading(true);
     try {
+      console.log('Creating general chat...');
       const chat = await api('/chats/general', 'POST', {}, token);
+      console.log('Chat created successfully:', chat);
       router.push(`/chat/${chat.id}`);
     } catch (error) {
       console.error('Failed to create chat:', error);
-      // Fallback to patients page if something goes wrong
-      router.push('/patients');
+      alert('Failed to create chat: ' + error.message);
+      // Don't redirect to patients on error, let user try again
     } finally {
       setLoading(false);
     }
@@ -45,6 +50,10 @@ export default function HomePage() {
               Welcome back, Dr. {user.name}! 👨‍⚕️
             </div>
           )}
+          {/* Debug info - remove in production */}
+          <div className="text-xs mt-2" style={{ color: 'var(--text-secondary)' }}>
+            Debug: User {user ? 'logged in' : 'not logged in'}, Token {token ? 'present' : 'missing'}
+          </div>
         </div>
         
         <div className="grid grid-cols-2 gap-4 mb-6">
