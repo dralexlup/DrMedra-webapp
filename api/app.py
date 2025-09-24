@@ -94,11 +94,49 @@ def list_messages(chat_id: str, doctor_id: str = Depends(get_doctor_id), db: Ses
 # ---------- Uploads ----------
 @app.post("/upload")
 async def upload(file: UploadFile = File(...), doctor_id: str = Depends(get_doctor_id)):
-    path = f"storage/{doctor_id}_{file.filename}"
+    import uuid
+    import mimetypes
+    
+    # Generate unique filename
+    file_extension = ""
+    if file.filename:
+        file_extension = file.filename.split('.')[-1] if '.' in file.filename else ""
+    
+    unique_filename = f"{doctor_id}_{uuid.uuid4().hex[:8]}.{file_extension}"
+    path = f"storage/{unique_filename}"
+    
+    # Save file
     async with aiofiles.open(path, "wb") as f:
         content = await file.read()
         await f.write(content)
-    return {"url": f"/{path}"}
+    
+    # Determine file type
+    mime_type = mimetypes.guess_type(file.filename or "")[0] or "application/octet-stream"
+    file_info = {
+        "url": f"/{path}",
+        "filename": file.filename,
+        "size": len(content),
+        "mime_type": mime_type,
+        "is_audio": mime_type.startswith("audio/") or file_extension in ["webm", "wav", "mp3", "m4a"],
+        "is_image": mime_type.startswith("image/")
+    }
+    
+    return file_info
+
+@app.post("/transcribe")
+async def transcribe_audio(file: UploadFile = File(...), doctor_id: str = Depends(get_doctor_id)):
+    """Placeholder for audio transcription - would integrate with Whisper or similar"""
+    # In a real implementation, you would:
+    # 1. Save the audio file
+    # 2. Use OpenAI Whisper, Azure Speech, or similar to transcribe
+    # 3. Return the transcribed text
+    
+    # For now, return a placeholder
+    return {
+        "text": "[Audio transcription would be implemented here with Whisper API or similar service]",
+        "confidence": 0.95,
+        "duration": 5.2
+    }
 
 # serve files
 from fastapi.staticfiles import StaticFiles

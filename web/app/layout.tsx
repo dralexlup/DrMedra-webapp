@@ -1,7 +1,8 @@
 import React from 'react'
+import './globals.css'
 
 export const metadata = {
-  title: 'MedraN Medical Assistant',
+  title: 'DrMedra Medical Assistant',
   description: 'AI-powered medical assistant platform',
 }
 
