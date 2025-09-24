@@ -4,14 +4,30 @@ AI-powered medical assistant platform with real-time consultations, patient mana
 
 ## 🏥 Features
 
-- 🤖 **AI-Powered Consultations**: Real-time streaming responses from medical AI models
-- 👥 **Patient Management**: Comprehensive patient records and medical history
-- 💬 **Chat Interface**: Intuitive chat-based consultations with multimedia support
-- 🔐 **Secure Authentication**: JWT-based authentication with doctor accounts
-- 📊 **Medical Context**: RAG (Retrieval-Augmented Generation) for relevant medical information
-- 🏥 **Multi-Doctor Support**: Multiple healthcare providers with isolated patient data
-- 📱 **Modern UI**: Clean, responsive interface built with Next.js 14
-- 🔄 **Real-time Streaming**: Live AI responses with Server-Sent Events
+### 🤖 AI-Powered Consultations
+- Real-time streaming responses from medical AI models
+- Voice message support with audio recording
+- Image upload for visual diagnosis support
+- Context-aware patient-specific consultations
+
+### 👥 Enhanced Patient Management
+- Comprehensive patient records with MRN support
+- Patient notes and medical history tracking
+- **📁 File Upload**: Upload and manage patient files (images, audio, PDFs)
+- **📊 Data Export**: Export patient records in JSON/TXT formats
+- **🗑️ Record Management**: Delete patients and chats with confirmation dialogs
+
+### 🎨 Modern User Interface
+- **🌙 Dark Mode**: Complete dark/light theme support across all pages
+- **📱 PWA Support**: Install as mobile app with offline capabilities
+- **🔄 Real-time UI**: Live streaming responses and loading states
+- **♿ Accessibility**: Touch-friendly, responsive design
+
+### 🔐 Security & Authentication
+- JWT-based authentication with Google OAuth support
+- Secure file upload and storage
+- Protected routes and API endpoints
+- Session management with auto-refresh
 
 ## 🏗️ Architecture
 
@@ -98,15 +114,23 @@ vllm serve google/gemma-2-2b-it --host 127.0.0.1 --port 1234
 - **API**: http://localhost:8000
 - **API Docs**: http://localhost:8000/docs
 
-## 📖 Usage Guide
+## 📆 Usage Guide
 
 ### Getting Started
-1. **Register**: Create a doctor account at `/login`
-2. **Add Patients**: Create patient records with medical information
-3. **Start Consultation**: Begin a new chat session for a patient
-4. **AI Chat**: Ask medical questions and receive real-time AI responses
-5. **Upload Images**: Share medical images for visual analysis
-6. **Review History**: Access previous consultation records
+1. **Register**: Create a doctor account at `/login` (or use demo account)
+2. **Theme**: Toggle between dark/light mode using 🌙/☀️ button
+3. **Add Patients**: Create patient records with name, MRN, and notes
+4. **File Management**: Upload patient files from the patient detail page
+5. **Start Consultations**: Begin general chats or patient-specific consultations
+6. **AI Interactions**: Use text, voice, or image inputs for AI responses
+7. **Data Export**: Export patient records using JSON or TXT format buttons
+8. **Record Management**: Delete patients or individual chats as needed
+
+### New Features Usage
+- **🌙 Dark Mode**: Click theme toggle on any page
+- **📁 File Upload**: Use "Upload" button in patient files section
+- **📊 Export Data**: Click "JSON" or "TXT" buttons on patient records
+- **🗑️ Delete**: Use delete buttons with confirmation dialogs
 
 ### Default Login (for testing)
 - Email: `admin@medra.com`
