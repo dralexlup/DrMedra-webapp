@@ -82,7 +82,9 @@ export default function PWAInstaller() {
   const dismissBanner = () => {
     setShowInstallBanner(false);
     // Don't show again for this session
-    sessionStorage.setItem('pwa-banner-dismissed', 'true');
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('pwa-banner-dismissed', 'true');
+    }
   };
 
   const dismissIOSInstructions = () => {
@@ -90,7 +92,7 @@ export default function PWAInstaller() {
   };
 
   // Don't show if already installed or dismissed this session
-  if (isStandalone || sessionStorage.getItem('pwa-banner-dismissed')) {
+  if (isStandalone || (typeof window !== 'undefined' && sessionStorage.getItem('pwa-banner-dismissed'))) {
     return null;
   }
 
