@@ -1,5 +1,6 @@
 import os, io, base64, requests, aiofiles
 from typing import List, Optional
+from datetime import datetime
 from fastapi import FastAPI, Depends, UploadFile, File, Form, HTTPException
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,6 +10,8 @@ from models import init_db, Doctor, Patient, Chat, Message
 from models import SessionLocal
 from db import get_db, get_doctor_id
 from auth import make_hash, verify_hash, make_token
+from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token
 from rag import retrieve_context, save_conversation_context
 from dotenv import load_dotenv
 
@@ -71,7 +74,77 @@ def get_current_user(doctor_id: str = Depends(get_doctor_id), db: Session = Depe
     doc = db.query(Doctor).filter_by(id=doctor_id).first()
     if not doc:
         raise HTTPException(401, "Invalid token")
-    return {"doctor_id": doc.id, "name": doc.name, "email": doc.email}
+    return {
+        "doctor_id": doc.id, 
+        "name": doc.name, 
+        "email": doc.email,
+        "avatar_url": doc.avatar_url,
+        "specialty": doc.specialty,
+        "phone": doc.phone
+    }
+
+class GoogleAuthBody(BaseModel):
+    token: str
+
+@app.post("/auth/google")
+def google_auth(body: GoogleAuthBody, db: Session = Depends(get_db)):
+    """Authenticate with Google OAuth token"""
+    try:
+        # Verify the Google token
+        idinfo = id_token.verify_oauth2_token(
+            body.token, 
+            google_requests.Request(), 
+            os.getenv("GOOGLE_CLIENT_ID")
+        )
+        
+        # Extract user info
+        google_id = idinfo['sub']
+        email = idinfo['email']
+        name = idinfo.get('name', email.split('@')[0])
+        avatar_url = idinfo.get('picture')
+        
+        # Check if user exists
+        doc = db.query(Doctor).filter_by(google_id=google_id).first()
+        if not doc:
+            # Check if email exists (for account linking)
+            doc = db.query(Doctor).filter_by(email=email).first()
+            if doc:
+                # Link Google account to existing email account
+                doc.google_id = google_id
+                doc.avatar_url = avatar_url
+            else:
+                # Create new user
+                doc = Doctor(
+                    email=email,
+                    name=name,
+                    google_id=google_id,
+                    avatar_url=avatar_url,
+                    password_hash=None  # No password for Google users
+                )
+                db.add(doc)
+        else:
+            # Update existing Google user info
+            doc.name = name
+            doc.avatar_url = avatar_url
+        
+        # Update last login
+        doc.last_login = datetime.utcnow()
+        db.commit()
+        
+        # Return JWT token
+        token = make_token(doc.id, doc.email)
+        return {
+            "token": token, 
+            "doctor_id": doc.id, 
+            "name": doc.name, 
+            "email": doc.email,
+            "avatar_url": doc.avatar_url
+        }
+        
+    except ValueError as e:
+        raise HTTPException(401, f"Invalid Google token: {str(e)}")
+    except Exception as e:
+        raise HTTPException(500, f"Google authentication failed: {str(e)}")
 
 # ---------- Patients ----------
 class PatientBody(BaseModel):

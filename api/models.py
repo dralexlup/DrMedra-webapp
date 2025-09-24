@@ -18,8 +18,14 @@ class Doctor(Base):
     id = Column(String, primary_key=True, default=gen_id)
     email = Column(String, unique=True, nullable=False)
     name = Column(String)
-    password_hash = Column(String, nullable=False)
+    password_hash = Column(String, nullable=True)  # Nullable for Google OAuth users
+    google_id = Column(String, nullable=True)  # Google OAuth ID
+    avatar_url = Column(String, nullable=True)  # Profile picture URL
+    specialty = Column(String, nullable=True)  # Medical specialty
+    license_number = Column(String, nullable=True)  # Medical license
+    phone = Column(String, nullable=True)  # Phone number
     created_at = Column(DateTime, default=datetime.utcnow)
+    last_login = Column(DateTime, nullable=True)
 
 class Patient(Base):
     __tablename__ = "patients"

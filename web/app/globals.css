@@ -162,11 +162,119 @@ body {
 .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
+/* Mobile-first responsive design */
+@media (max-width: 480px) {
+  .container { 
+    padding: 0.5rem; 
+    margin: 0;
+    max-width: 100%;
+  }
+  .card { 
+    padding: 1rem;
+    margin: 0.5rem;
+    border-radius: 0.75rem;
+  }
+  .btn {
+    min-height: 48px; /* Better touch targets */
+    padding: 0.875rem 1rem;
+  }
+  .input, .textarea {
+    font-size: 16px; /* Prevent zoom on iOS */
+    padding: 0.875rem;
+  }
+  
+  /* Chat interface mobile optimizations */
+  .chat-sidebar {
+    width: 100% !important;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+  
+  .chat-sidebar.open {
+    transform: translateX(0);
+  }
+  
+  .mobile-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+  }
+}
+
 @media (max-width: 768px) {
   .grid-cols-2 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
   .grid-cols-3 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
   .container { padding: 1rem; }
   .card { padding: 1.5rem; }
+  
+  /* Stack layout for tablet */
+  .desktop-flex {
+    flex-direction: column;
+  }
+}
+
+/* PWA and standalone mode styles */
+@media (display-mode: standalone) {
+  body {
+    /* Remove pull-to-refresh on iOS PWA */
+    overscroll-behavior-y: contain;
+  }
+  
+  /* Add safe area insets for devices with notches */
+  .pwa-header {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+  
+  .pwa-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+}
+
+/* iOS specific styles */
+@supports (-webkit-touch-callout: none) {
+  .ios-scroll-fix {
+    /* Fix for iOS scroll bounce */
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Touch-friendly improvements */
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Voice recording button mobile styles */
+.voice-btn-mobile {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+@media (max-width: 480px) {
+  .voice-btn-mobile {
+    bottom: 1rem;
+    right: 1rem;
+    width: 56px;
+    height: 56px;
+  }
 }
 
 .text-sm { font-size: 0.875rem; }
