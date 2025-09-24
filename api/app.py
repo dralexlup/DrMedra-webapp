@@ -74,22 +74,148 @@ def list_patients(doctor_id: str = Depends(get_doctor_id), db: Session = Depends
     rows = db.query(Patient).filter_by(doctor_id=doctor_id).order_by(Patient.created_at.desc()).all()
     return [{"id": r.id, "name": r.name, "mrn": r.mrn, "notes": r.notes} for r in rows]
 
+@app.get("/patients/{patient_id}")
+def get_patient_profile(patient_id: str, doctor_id: str = Depends(get_doctor_id), db: Session = Depends(get_db)):
+    """Get patient profile with conversations and uploaded files"""
+    patient = db.query(Patient).filter_by(id=patient_id, doctor_id=doctor_id).first()
+    if not patient:
+        raise HTTPException(404, "Patient not found")
+    
+    # Get patient chats
+    chats = db.query(Chat).filter_by(patient_id=patient_id, doctor_id=doctor_id).order_by(Chat.created_at.desc()).all()
+    
+    # Get patient messages with files
+    messages = db.query(Message).filter_by(patient_id=patient_id, doctor_id=doctor_id).order_by(Message.created_at.desc()).all()
+    
+    # Get files uploaded for this patient
+    files = [m for m in messages if m.media_url]
+    
+    return {
+        "patient": {
+            "id": patient.id,
+            "name": patient.name,
+            "mrn": patient.mrn,
+            "notes": patient.notes,
+            "created_at": patient.created_at.isoformat()
+        },
+        "chats": [{
+            "id": c.id,
+            "title": c.title,
+            "created_at": c.created_at.isoformat()
+        } for c in chats],
+        "recent_messages": [{
+            "id": m.id,
+            "role": m.role,
+            "text": m.text[:200] + "..." if len(m.text) > 200 else m.text,
+            "chat_id": m.chat_id,
+            "created_at": m.created_at.isoformat()
+        } for m in messages[:10]],
+        "files": [{
+            "id": f.id,
+            "media_url": f.media_url,
+            "media_type": f.media_type,
+            "file_name": f.file_name,
+            "chat_id": f.chat_id,
+            "created_at": f.created_at.isoformat()
+        } for f in files]
+    }
+
 # ---------- Chats / Messages ----------
-@app.post("/chats")
-def create_chat(patient_id: str, title: str = "Consult", doctor_id: str = Depends(get_doctor_id), db: Session = Depends(get_db)):
-    c = Chat(doctor_id=doctor_id, patient_id=patient_id, title=title)
+# Put specific routes before generic ones
+@app.post("/chats/general")
+def create_general_chat(title: str = "General Chat", doctor_id: str = Depends(get_doctor_id), db: Session = Depends(get_db)):
+    """Create a general chat not associated with any patient"""
+    c = Chat(
+        doctor_id=doctor_id, 
+        patient_id=None, 
+        patient_name=None,
+        title=title,
+        is_general="true"
+    )
     db.add(c); db.commit()
-    return {"id": c.id, "title": c.title}
+    return {
+        "id": c.id, 
+        "title": c.title, 
+        "patient_id": None,
+        "patient_name": None,
+        "is_general": True
+    }
+
+@app.post("/chats")
+def create_chat(
+    patient_id: Optional[str] = None, 
+    title: str = "Consult", 
+    is_general: bool = False,
+    doctor_id: str = Depends(get_doctor_id), 
+    db: Session = Depends(get_db)
+):
+    patient_name = None
+    if patient_id and not is_general:
+        # Get patient name for easy access
+        patient = db.query(Patient).filter_by(id=patient_id).first()
+        if patient:
+            patient_name = patient.name
+        else:
+            raise HTTPException(404, "Patient not found")
+    
+    c = Chat(
+        doctor_id=doctor_id, 
+        patient_id=patient_id if not is_general else None, 
+        patient_name=patient_name,
+        title=title,
+        is_general="true" if is_general else "false"
+    )
+    db.add(c); db.commit()
+    return {
+        "id": c.id, 
+        "title": c.title, 
+        "patient_id": c.patient_id,
+        "patient_name": c.patient_name,
+        "is_general": c.is_general == "true"
+    }
+
+@app.get("/chats/general")
+def list_general_chats(doctor_id: str = Depends(get_doctor_id), db: Session = Depends(get_db)):
+    """Get all general chats (not patient-specific)"""
+    cs = db.query(Chat).filter_by(doctor_id=doctor_id, is_general="true").order_by(Chat.created_at.desc()).all()
+    return [{
+        "id": c.id, 
+        "title": c.title, 
+        "is_general": True,
+        "created_at": c.created_at.isoformat()
+    } for c in cs]
 
 @app.get("/chats")
-def list_chats(doctor_id: str = Depends(get_doctor_id), db: Session = Depends(get_db)):
-    cs = db.query(Chat).filter_by(doctor_id=doctor_id).order_by(Chat.created_at.desc()).all()
-    return [{"id": c.id, "title": c.title, "patient_id": c.patient_id} for c in cs]
+def list_chats(patient_id: Optional[str] = None, doctor_id: str = Depends(get_doctor_id), db: Session = Depends(get_db)):
+    query = db.query(Chat).filter_by(doctor_id=doctor_id)
+    
+    if patient_id:
+        # Get chats for specific patient
+        query = query.filter_by(patient_id=patient_id)
+    
+    cs = query.order_by(Chat.created_at.desc()).all()
+    return [{
+        "id": c.id, 
+        "title": c.title, 
+        "patient_id": c.patient_id,
+        "patient_name": c.patient_name,
+        "is_general": c.is_general == "true",
+        "created_at": c.created_at.isoformat()
+    } for c in cs]
 
 @app.get("/messages")
 def list_messages(chat_id: str, doctor_id: str = Depends(get_doctor_id), db: Session = Depends(get_db)):
     ms = db.query(Message).filter_by(chat_id=chat_id).order_by(Message.created_at.asc()).all()
-    return [{"id": m.id, "role": m.role, "text": m.text, "media_url": m.media_url} for m in ms]
+    return [{
+        "id": m.id, 
+        "role": m.role, 
+        "text": m.text, 
+        "media_url": m.media_url,
+        "media_type": m.media_type,
+        "file_name": m.file_name,
+        "patient_name": m.patient_name,
+        "created_at": m.created_at.isoformat()
+    } for m in ms]
 
 # ---------- Uploads ----------
 @app.post("/upload")
@@ -153,8 +279,32 @@ class GenerateBody(BaseModel):
 
 @app.post("/stream")
 def stream_generate(body: GenerateBody, doctor_id: str = Depends(get_doctor_id), db: Session = Depends(get_db)):
-    # 1) persist user message
-    db.add(Message(chat_id=body.chat_id, role="user", text=body.prompt, media_url=body.image_url))
+    # Get chat info for patient context
+    chat = db.query(Chat).filter_by(id=body.chat_id, doctor_id=doctor_id).first()
+    if not chat:
+        raise HTTPException(404, "Chat not found")
+    
+    # 1) persist user message with patient info
+    user_message = Message(
+        chat_id=body.chat_id,
+        doctor_id=doctor_id,
+        patient_id=chat.patient_id,
+        patient_name=chat.patient_name,
+        role="user", 
+        text=body.prompt, 
+        media_url=body.image_url
+    )
+    
+    # Set media type if we have a file
+    if body.image_url:
+        if any(ext in body.image_url.lower() for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']):
+            user_message.media_type = "image"
+        elif any(ext in body.image_url.lower() for ext in ['.webm', '.wav', '.mp3', '.m4a']):
+            user_message.media_type = "audio"
+        else:
+            user_message.media_type = "file"
+    
+    db.add(user_message)
     db.commit()
 
     # 2) optional RAG
@@ -163,11 +313,27 @@ def stream_generate(body: GenerateBody, doctor_id: str = Depends(get_doctor_id),
     # 3) build payload for OpenAI-compatible API
     messages = []
     
-    # Add system message if we have context
-    citations = "\n".join([f"- {c['text'][:300]}" for c in ctx])
-    system_content = f"{body.system}\n\nRelevant context:\n{citations}" if citations else body.system
-    if system_content:
-        messages.append({"role": "system", "content": system_content})
+    # Build enhanced system message with patient context
+    system_parts = [body.system]
+    
+    # Add patient context if available
+    if chat.patient_name:
+        system_parts.append(f"\n\nYou are currently consulting with patient: {chat.patient_name}")
+        if chat.patient_id:
+            # You could add patient medical history here from the database
+            patient = db.query(Patient).filter_by(id=chat.patient_id).first()
+            if patient and patient.notes:
+                system_parts.append(f"Patient notes: {patient.notes}")
+    else:
+        system_parts.append("\n\nThis is a general medical consultation.")
+    
+    # Add RAG context if available
+    if ctx:
+        citations = "\n".join([f"- {c['text'][:300]}" for c in ctx])
+        system_parts.append(f"\n\nRelevant context:\n{citations}")
+    
+    system_content = "".join(system_parts)
+    messages.append({"role": "system", "content": system_content})
     
     # Add user message with text and optional image
     user_content = []
@@ -242,14 +408,27 @@ def stream_generate(body: GenerateBody, doctor_id: str = Depends(get_doctor_id),
             buf.append(error_msg)
             yield f"data: {error_msg}\n\n"
         
-        # persist assistant message
+        # persist assistant message with patient info
         text = "".join(buf)
         if text.strip():  # Only save if we have content
-            db.add(Message(chat_id=body.chat_id, role="assistant", text=text))
+            assistant_message = Message(
+                chat_id=body.chat_id,
+                doctor_id=doctor_id,
+                patient_id=chat.patient_id,
+                patient_name=chat.patient_name,
+                role="assistant", 
+                text=text
+            )
+            db.add(assistant_message)
             db.commit()
         yield "event: end\ndata: [DONE]\n\n"
 
     return StreamingResponse(gen(), media_type="text/event-stream")
+
+# Test endpoint for debugging
+@app.get("/test")
+def test_endpoint():
+    return {"message": "Test endpoint working"}
 
 # Health check
 @app.get("/health")

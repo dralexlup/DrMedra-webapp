@@ -48,6 +48,15 @@ export default function Patients() {
     }
   }
 
+  async function newGeneralChat() {
+    try {
+      const c = await api(`/chats/general`,"POST",undefined, token!);
+      location.href = `/chat/${c.id}`;
+    } catch (error) {
+      alert("Failed to create general chat");
+    }
+  }
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !loading) {
       addPatient();
@@ -68,9 +77,17 @@ export default function Patients() {
               </p>
             )}
           </div>
-          <Link href="/" className="btn btn-secondary">
-            🏠 Home
-          </Link>
+          <div className="flex gap-2">
+            <button 
+              className="btn btn-success"
+              onClick={newGeneralChat}
+            >
+              💬 General Chat
+            </button>
+            <Link href="/" className="btn btn-secondary">
+              🏠 Home
+            </Link>
+          </div>
         </div>
       </div>
       
@@ -168,13 +185,22 @@ export default function Patients() {
                       )}
                     </div>
                     
-                    <button 
-                      className="btn btn-primary"
-                      onClick={() => newChat(p.id)}
-                      style={{ minWidth: '120px' }}
-                    >
-                      💬 Start Chat
-                    </button>
+                    <div className="flex gap-2">
+                      <Link 
+                        href={`/patients/${p.id}`}
+                        className="btn btn-secondary"
+                        style={{ minWidth: '80px', fontSize: '0.75rem' }}
+                      >
+                        👀 View
+                      </Link>
+                      <button 
+                        className="btn btn-primary"
+                        onClick={() => newChat(p.id)}
+                        style={{ minWidth: '100px', fontSize: '0.75rem' }}
+                      >
+                        💬 Chat
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

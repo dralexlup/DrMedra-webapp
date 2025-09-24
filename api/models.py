@@ -34,17 +34,24 @@ class Chat(Base):
     __tablename__ = "chats"
     id = Column(String, primary_key=True, default=gen_id)
     doctor_id = Column(String, ForeignKey("doctors.id", ondelete="CASCADE"))
-    patient_id = Column(String, ForeignKey("patients.id", ondelete="SET NULL"))
+    patient_id = Column(String, ForeignKey("patients.id", ondelete="SET NULL"), nullable=True)  # Allow null for general chats
+    patient_name = Column(String, nullable=True)  # Store patient name for easy access
     title = Column(String)
+    is_general = Column(String, default="false")  # "true" for general chats, "false" for patient-specific
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class Message(Base):
     __tablename__ = "messages"
     id = Column(String, primary_key=True, default=gen_id)
     chat_id = Column(String, ForeignKey("chats.id", ondelete="CASCADE"))
+    doctor_id = Column(String, ForeignKey("doctors.id", ondelete="CASCADE"))  # Direct reference to doctor
+    patient_id = Column(String, ForeignKey("patients.id", ondelete="SET NULL"), nullable=True)
+    patient_name = Column(String, nullable=True)  # Store patient name for easy queries
     role = Column(String)   # 'user' | 'assistant' | 'system'
     text = Column(Text)
     media_url = Column(String)  # local /storage path
+    media_type = Column(String, nullable=True)  # 'image', 'audio', etc.
+    file_name = Column(String, nullable=True)  # original filename
     created_at = Column(DateTime, default=datetime.utcnow)
 
 def init_db():

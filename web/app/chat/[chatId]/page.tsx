@@ -93,7 +93,8 @@ export default function Chat({ params }: { params: { chatId: string } }) {
 
   const handleVoiceRecording = (audioBlob: Blob) => {
     setAudioBlob(audioBlob);
-    setPrompt("[Voice Message Recorded - Click Send to transcribe and send]");
+    // Keep the prompt empty and let the audio speak for itself
+    setPrompt("");
   };
 
   async function send() {
@@ -132,9 +133,16 @@ export default function Chat({ params }: { params: { chatId: string } }) {
           body: form
         });
         const data = await res.json();
-        // For now, we'll just indicate it's a voice message
-        // In a full implementation, you'd want to transcribe it server-side
-        finalPrompt = "[Voice Message] " + (prompt.includes("Voice Message Recorded") ? "Please transcribe and respond to my voice message." : prompt);
+        
+        // Set the uploaded file as the image_url so it gets sent to the model
+        image_url = data.url.startsWith("/") ? `${process.env.NEXT_PUBLIC_API_BASE}${data.url}` : data.url;
+        
+        // Create a meaningful prompt for voice messages
+        if (!finalPrompt.trim()) {
+          finalPrompt = "I've uploaded a voice message. Please listen to it and provide a medical response based on what you hear. If you cannot process audio directly, please let me know and I can provide a text transcription.";
+        } else {
+          finalPrompt = `[Voice Message] ${finalPrompt}`;
+        }
         setAudioBlob(null);
       } catch (error) {
         alert("Failed to upload voice message");
@@ -147,7 +155,8 @@ export default function Chat({ params }: { params: { chatId: string } }) {
       role: "user", 
       text: finalPrompt, 
       media_url: image_url,
-      isVoice: !!audioBlob
+      isVoice: !!audioBlob,
+      media_type: audioBlob ? "audio" : (image ? "image" : null)
     };
     setMessages(m => [...m, userMessage]);
     setPrompt(""); 
