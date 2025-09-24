@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
-import { api } from "../../lib/api";
+import { useState, useEffect } from "react";
+import { useAuth } from "../../contexts/AuthContext";
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -9,6 +10,15 @@ export default function Login() {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const { user, login, register } = useAuth();
+  const router = useRouter();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      router.push('/patients');
+    }
+  }, [user, router]);
 
   async function doLogin(e: any) {
     e.preventDefault();
@@ -21,10 +31,8 @@ export default function Login() {
     setError("");
     
     try {
-      const r = await api("/auth/login", "POST", {email, password});
-      localStorage.setItem("token", r.token);
-      localStorage.setItem("name", r.name);
-      location.href = "/patients";
+      await login(email, password);
+      router.push('/patients');
     } catch (err: any) {
       setError(err.message || "Login failed");
     } finally {
@@ -42,14 +50,8 @@ export default function Login() {
     setError("");
     
     try {
-      const r = await api("/auth/register", "POST", {
-        email, 
-        password, 
-        name: name || email.split("@")[0]
-      });
-      localStorage.setItem("token", r.token);
-      localStorage.setItem("name", r.name);
-      location.href = "/patients";
+      await register(email, password, name);
+      router.push('/patients');
     } catch (err: any) {
       setError(err.message || "Registration failed");
     } finally {

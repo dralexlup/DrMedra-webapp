@@ -4,7 +4,7 @@ from passlib.hash import bcrypt
 
 JWT_SECRET = os.getenv("JWT_SECRET", "change-me")
 JWT_ALG = "HS256"
-JWT_EXP_MIN = 60 * 24 * 7
+JWT_EXP_MIN = 60 * 24 * 30  # 30 days for persistent login
 
 def make_hash(pw: str) -> str:
     return bcrypt.hash(pw)

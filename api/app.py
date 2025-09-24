@@ -9,7 +9,7 @@ from models import init_db, Doctor, Patient, Chat, Message
 from models import SessionLocal
 from db import get_db, get_doctor_id
 from auth import make_hash, verify_hash, make_token
-from rag import retrieve_context
+from rag import retrieve_context, save_conversation_context
 from dotenv import load_dotenv
 
 load_dotenv()  # Load environment variables from .env file
@@ -56,6 +56,22 @@ def login(body: LoginBody, db: Session = Depends(get_db)):
     if not doc or not verify_hash(body.password, doc.password_hash):
         raise HTTPException(401, "Invalid credentials")
     return {"token": make_token(doc.id, doc.email), "doctor_id": doc.id, "name": doc.name}
+
+@app.post("/auth/refresh")
+def refresh_token(doctor_id: str = Depends(get_doctor_id), db: Session = Depends(get_db)):
+    """Refresh JWT token for continued authentication"""
+    doc = db.query(Doctor).filter_by(id=doctor_id).first()
+    if not doc:
+        raise HTTPException(401, "Invalid token")
+    return {"token": make_token(doc.id, doc.email), "doctor_id": doc.id, "name": doc.name}
+
+@app.get("/auth/me")
+def get_current_user(doctor_id: str = Depends(get_doctor_id), db: Session = Depends(get_db)):
+    """Get current user info from token"""
+    doc = db.query(Doctor).filter_by(id=doctor_id).first()
+    if not doc:
+        raise HTTPException(401, "Invalid token")
+    return {"doctor_id": doc.id, "name": doc.name, "email": doc.email}
 
 # ---------- Patients ----------
 class PatientBody(BaseModel):
@@ -307,10 +323,28 @@ def stream_generate(body: GenerateBody, doctor_id: str = Depends(get_doctor_id),
     db.add(user_message)
     db.commit()
 
-    # 2) optional RAG
-    ctx = retrieve_context(body.prompt, None)  # plug patient id if you want
+    # 2) Save user message to RAG context and retrieve relevant context
+    save_conversation_context(
+        doctor_id=doctor_id, 
+        patient_id=chat.patient_id, 
+        chat_id=body.chat_id,
+        role="user", 
+        text=body.prompt, 
+        patient_name=chat.patient_name
+    )
+    
+    # Retrieve relevant context
+    ctx = retrieve_context(body.prompt, doctor_id, chat.patient_id)
 
-    # 3) build payload for OpenAI-compatible API
+    # 3) Get recent conversation history for context
+    recent_messages = db.query(Message).filter_by(
+        chat_id=body.chat_id
+    ).order_by(Message.created_at.desc()).limit(10).all()
+    
+    # Reverse to get chronological order
+    recent_messages = recent_messages[::-1]
+    
+    # 4) build payload for OpenAI-compatible API
     messages = []
     
     # Build enhanced system message with patient context
@@ -330,27 +364,43 @@ def stream_generate(body: GenerateBody, doctor_id: str = Depends(get_doctor_id),
     # Add RAG context if available
     if ctx:
         citations = "\n".join([f"- {c['text'][:300]}" for c in ctx])
-        system_parts.append(f"\n\nRelevant context:\n{citations}")
+        system_parts.append(f"\n\nRelevant context from previous conversations:\n{citations}")
     
     system_content = "".join(system_parts)
     messages.append({"role": "system", "content": system_content})
+    
+    # Add recent conversation history (excluding the current message we just added)
+    for msg in recent_messages[:-1]:  # Skip the last message which is the current user message
+        if msg.text:  # Only include messages with text content
+            messages.append({
+                "role": msg.role,
+                "content": msg.text[:1000]  # Limit message length to avoid token limits
+            })
     
     # Add user message with text and optional image
     user_content = []
     user_content.append({"type": "text", "text": body.prompt})
     
     if body.image_url:
-        # fetch and base64 the image for the model
-        try:
-            r = requests.get(body.image_url, timeout=10)
-            r.raise_for_status()
-            b64 = base64.b64encode(r.content).decode("utf-8")
-            user_content.append({
-                "type": "image_url",
-                "image_url": {"url": f"data:image/jpeg;base64,{b64}"}
-            })
-        except Exception as e:
-            print(f"Failed to fetch image: {e}")
+        # Check if it's an audio file
+        is_audio = any(ext in body.image_url.lower() for ext in ['.webm', '.wav', '.mp3', '.m4a'])
+        is_image = any(ext in body.image_url.lower() for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp'])
+        
+        if is_audio:
+            # For audio files, modify the text prompt to indicate audio processing is needed
+            user_content[0]["text"] = f"{body.prompt}\n\n[Note: User has uploaded an audio file ({body.image_url}). Since I cannot directly process audio files, I should explain that they would need to transcribe the audio first, or suggest they describe what was said in the audio message.]"
+        elif is_image:
+            # fetch and base64 the image for the model
+            try:
+                r = requests.get(body.image_url, timeout=10)
+                r.raise_for_status()
+                b64 = base64.b64encode(r.content).decode("utf-8")
+                user_content.append({
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{b64}"}
+                })
+            except Exception as e:
+                print(f"Failed to fetch image: {e}")
     
     # If only text, use simple string format
     if len(user_content) == 1:
@@ -421,6 +471,16 @@ def stream_generate(body: GenerateBody, doctor_id: str = Depends(get_doctor_id),
             )
             db.add(assistant_message)
             db.commit()
+            
+            # Save assistant response to RAG context
+            save_conversation_context(
+                doctor_id=doctor_id, 
+                patient_id=chat.patient_id, 
+                chat_id=body.chat_id,
+                role="assistant", 
+                text=text, 
+                patient_name=chat.patient_name
+            )
         yield "event: end\ndata: [DONE]\n\n"
 
     return StreamingResponse(gen(), media_type="text/event-stream")

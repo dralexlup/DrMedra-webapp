@@ -66,11 +66,14 @@ function VoiceRecorder({ onRecordingComplete, disabled }: VoiceRecorderProps) {
 export default function Chat({ params }: { params: { chatId: string } }) {
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
   const [messages, setMessages] = useState<any[]>([]);
+  const [conversations, setConversations] = useState<any[]>([]);
+  const [currentChatInfo, setCurrentChatInfo] = useState<any>(null);
   const [prompt, setPrompt] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [streaming, setStreaming] = useState(false);
   const [doctorName, setDoctorName] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const chatId = params.chatId;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -84,8 +87,22 @@ export default function Chat({ params }: { params: { chatId: string } }) {
     const savedName = localStorage.getItem("name");
     if (savedName) setDoctorName(savedName);
     
+    // Load current chat messages
     api(`/messages?chat_id=${chatId}`,"GET",undefined, token!).then(setMessages);
-  }, [chatId]);
+    
+    // Load all conversations for sidebar
+    Promise.all([
+      api(`/chats/general`, "GET", undefined, token!),
+      api(`/chats`, "GET", undefined, token!)
+    ]).then(([generalChats, patientChats]) => {
+      const allChats = [...generalChats, ...patientChats];
+      setConversations(allChats);
+      
+      // Find current chat info
+      const currentChat = allChats.find(c => c.id === chatId);
+      setCurrentChatInfo(currentChat);
+    });
+  }, [chatId, token]);
 
   useEffect(() => {
     scrollToBottom();
@@ -206,35 +223,111 @@ export default function Chat({ params }: { params: { chatId: string } }) {
   };
 
   return (
-    <div className="container" style={{ maxWidth: '1000px' }}>
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold" style={{ color: 'var(--primary-color)' }}>
-              💬 Medical Consultation
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+      {/* Sidebar */}
+      <div style={{
+        width: sidebarOpen ? '320px' : '0',
+        transition: 'width 0.3s ease',
+        overflow: 'hidden',
+        background: 'var(--secondary-color)',
+        borderRight: '1px solid var(--border-color)'
+      }}>
+        <div style={{ padding: '1rem', height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-semibold">Conversations</h3>
+            <Link href="/patients" className="btn btn-secondary" style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}>
+              👥 Patients
+            </Link>
+          </div>
+          
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            {conversations.length === 0 ? (
+              <div className="text-center" style={{ padding: '2rem', color: 'var(--text-secondary)' }}>
+                <div className="text-xl mb-2">💬</div>
+                <p className="text-sm">No conversations yet</p>
+              </div>
+            ) : (
+              conversations.map(conv => (
+                <Link
+                  key={conv.id}
+                  href={`/chat/${conv.id}`}
+                  style={{
+                    display: 'block',
+                    padding: '0.75rem',
+                    marginBottom: '0.5rem',
+                    borderRadius: 'var(--radius)',
+                    background: conv.id === chatId ? 'var(--primary-color)' : 'white',
+                    color: conv.id === chatId ? 'white' : 'var(--text-primary)',
+                    textDecoration: 'none',
+                    border: '1px solid var(--border-color)',
+                    transition: 'all 0.2s ease'
+                  }}
+                  className={conv.id === chatId ? '' : 'hover:bg-gray-50'}
+                >
+                  <div className="font-medium text-sm" style={{
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {conv.is_general ? '💬 General Chat' : `👤 ${conv.patient_name || 'Patient Chat'}`}
+                  </div>
+                  <div className="text-xs mt-1" style={{ opacity: 0.7 }}>
+                    {conv.title || 'New conversation'}
+                  </div>
+                  {conv.created_at && (
+                    <div className="text-xs mt-1" style={{ opacity: 0.5 }}>
+                      {new Date(conv.created_at).toLocaleDateString()}
+                    </div>
+                  )}
+                </Link>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+      
+      {/* Main Chat Area */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {/* Header */}
+        <div style={{
+          padding: '1rem',
+          borderBottom: '1px solid var(--border-color)',
+          background: 'white',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem'
+        }}>
+          <button 
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="btn btn-secondary"
+            style={{ padding: '0.5rem' }}
+          >
+            {sidebarOpen ? '◀' : '▶'}
+          </button>
+          
+          <div style={{ flex: 1 }}>
+            <h1 className="text-xl font-bold" style={{ color: 'var(--primary-color)' }}>
+              {currentChatInfo?.is_general ? '💬 General Medical Chat' : 
+               currentChatInfo?.patient_name ? `👤 Chat with ${currentChatInfo.patient_name}` : 
+               '💬 Medical Consultation'}
             </h1>
             {doctorName && (
-              <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-                Dr. {doctorName} • Chat ID: {chatId.slice(0, 8)}...
+              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                Dr. {doctorName}
               </p>
             )}
           </div>
-          <Link href="/patients" className="btn btn-secondary">
-            👥 Back to Patients
-          </Link>
         </div>
-      </div>
 
-      {/* Chat Messages */}
-      <div className="card mb-6" style={{ height: '500px', display: 'flex', flexDirection: 'column' }}>
+        {/* Chat Messages */}
         <div style={{ 
           flex: 1, 
           overflowY: 'auto', 
           padding: '1rem',
           display: 'flex',
           flexDirection: 'column',
-          gap: '1rem'
+          gap: '1rem',
+          background: '#f8fafc'
         }}>
           {messages.length === 0 ? (
             <div className="text-center" style={{ 
@@ -362,10 +455,13 @@ export default function Chat({ params }: { params: { chatId: string } }) {
           
           <div ref={messagesEndRef} />
         </div>
-      </div>
-
-      {/* Message Input */}
-      <div className="card">
+        
+        {/* Message Input */}
+        <div style={{
+          borderTop: '1px solid var(--border-color)',
+          background: 'white',
+          padding: '1rem'
+        }}>
         {/* Image Preview */}
         {image && (
           <div className="mb-4" style={{
@@ -489,8 +585,9 @@ export default function Chat({ params }: { params: { chatId: string } }) {
           </div>
         </div>
         
-        <div className="text-xs mt-2" style={{ color: 'var(--text-secondary)' }}>
-          ⚠️ This is an AI assistant. Always verify medical information with qualified healthcare professionals.
+          <div className="text-xs mt-2" style={{ color: 'var(--text-secondary)' }}>
+            ⚠️ This is an AI assistant. Always verify medical information with qualified healthcare professionals.
+          </div>
         </div>
       </div>
     </div>

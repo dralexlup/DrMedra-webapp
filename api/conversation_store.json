@@ -1,0 +1,49 @@
+{
+  "40bd0307-9253-49fc-9ae7-1eda8ae6dfc0": {
+    "acc49063-bb86-4b98-b4df-25cd32aa26a4_2025-09-24T13:14:16.788813": {
+      "chat_id": "acc49063-bb86-4b98-b4df-25cd32aa26a4",
+      "patient_id": null,
+      "patient_name": null,
+      "role": "user",
+      "text": "I've uploaded a voice message. Please listen to it and provide a medical response based on what you hear. If you cannot process audio directly, please let me know and I can provide a text transcription.",
+      "timestamp": "2025-09-24T13:14:16.788824",
+      "keywords": []
+    },
+    "acc49063-bb86-4b98-b4df-25cd32aa26a4_2025-09-24T13:14:25.803561": {
+      "chat_id": "acc49063-bb86-4b98-b4df-25cd32aa26a4",
+      "patient_id": null,
+      "patient_name": null,
+      "role": "assistant",
+      "text": "Please provide the text transcription of the voice message. I am a text-based AI and unfortunately **cannot directly process audio files.** \n\nOnce you provide the transcription, I will do my best to listen carefully and provide a helpful medical response based on the information you share. \n\n**Important Disclaimer:** *I am an AI and cannot provide medical diagnoses or treatment recommendations. My responses are for informational purposes only and should not be considered a substitute for professional medical advice. It is crucial to consult with a qualified healthcare provider for any health concerns or before making any decisions related to your health or treatment.*\n\nI'm ready when you are! Just paste the transcription here.\n\n\n\n",
+      "timestamp": "2025-09-24T13:14:25.803572",
+      "keywords": [
+        "treatment"
+      ]
+    },
+    "acc49063-bb86-4b98-b4df-25cd32aa26a4_2025-09-24T13:14:58.690527": {
+      "chat_id": "acc49063-bb86-4b98-b4df-25cd32aa26a4",
+      "patient_id": null,
+      "patient_name": null,
+      "role": "user",
+      "text": "What do you see here?",
+      "timestamp": "2025-09-24T13:14:58.690538",
+      "keywords": []
+    },
+    "acc49063-bb86-4b98-b4df-25cd32aa26a4_2025-09-24T13:15:42.071473": {
+      "chat_id": "acc49063-bb86-4b98-b4df-25cd32aa26a4",
+      "patient_id": null,
+      "patient_name": null,
+      "role": "assistant",
+      "text": "Okay, I've reviewed the ECG you provided. Here's what I observe:\n\n**Overall Impression:**\n\nThis is a **wide-complex tachycardia**. This means the heart rate is rapid, and the QRS complexes are abnormally wide, indicating that the electrical impulse is not traveling through the ventricles in a normal, coordinated fashion. This is a potentially serious rhythm and requires immediate evaluation.\n\n**Detailed Observations:**\n\n* **Rate:** The heart rate appears to be significantly elevated, likely in the range of 100-200 beats per minute. It's difficult to give an exact count without calipers, but it's clearly rapid.\n* **Rhythm:** The rhythm is irregular and chaotic, not regular. \n* **QRS Complexes:** The QRS complexes are wide (>0.12 seconds), as mentioned above, indicating ventricular origin of the electrical impulse.\n* **P Waves:** P waves are not clearly visible or are buried within the QRS complexes, suggesting that the impulse originates from the ventricles rather than the atria.\n* **ST Segment:** The ST segments are not particularly elevated or depressed, but there might be some subtle changes.\n* **T Waves:** T waves are inverted and appear somewhat asymmetric, which can be seen in various cardiac conditions.\n* **Axis:** The QRS axis is difficult to determine precisely due to the rate and irregularity, but it appears to be shifted to the right.\n\n**Possible Diagnoses (Differential Diagnosis):**\n\nGiven these findings, several possibilities need to be considered:\n\n* **Ventricular Tachycardia (VT):** This is the most likely diagnosis. VT is a rapid heart rhythm originating from the ventricles. It can be monomorphic (consistent QRS morphology) or polymorphic (varying QRS morphology). The wide-complex tachycardia in the image suggests a non-monomorphic VT.\n* **Ventricular Fibrillation (VF):** This is a life-threatening arrhythmia characterized by chaotic electrical activity in the ventricles. It often presents as a rapid, irregular rhythm with no discernible QRS complexes. While the image shows some QRS complexes, VF cannot be entirely ruled out without further clinical context.\n* **Other Wide-Complex Tachycardias:** Less commonly, wide-complex tachycardias can be caused by other conditions like bundle branch block with ventricular escape beats or certain pre-excitation syndromes. However, these are less likely given the overall appearance of the rhythm in this ECG.\n\n**Important Disclaimer:**\n\n**I am an AI and cannot provide a definitive medical diagnosis.** This analysis is based solely on the provided ECG image. A qualified healthcare professional needs to correlate these findings with the patient's clinical history, physical examination, and other investigations to arrive at an accurate diagnosis and treatment plan.\n\n**Immediate Action Required:**\n\nThis ECG indicates a potentially life-threatening arrhythmia. **Immediate medical attention is crucial.** The patient needs to be evaluated by a physician immediately, and treatment may include medications or electrical cardioversion.\n\n\n\n**Please remember that this information is for general knowledge and informational purposes only, and does not constitute medical advice. It is essential to consult with a qualified healthcare professional for any health concerns or before making any decisions related to your health or treatment.**\n\n\n\n",
+      "timestamp": "2025-09-24T13:15:42.071484",
+      "keywords": [
+        "diagnosis",
+        "heart rate",
+        "treatment",
+        "medication",
+        "pulse",
+        "morphology"
+      ]
+    }
+  }
+}

@@ -1,5 +1,6 @@
 import React from 'react'
 import './globals.css'
+import { AuthProvider } from '../contexts/AuthContext'
 
 export const metadata = {
   title: 'DrMedra Medical Assistant',
@@ -14,7 +15,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   )

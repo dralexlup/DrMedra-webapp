@@ -1,26 +1,28 @@
 "use client";
 import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
+import { useAuth, withAuth } from "../../contexts/AuthContext";
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-export default function Patients() {
+function Patients() {
   const [patients, setPatients] = useState<any[]>([]);
   const [name, setName] = useState("");
   const [mrn, setMrn] = useState("");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
-  const [doctorName, setDoctorName] = useState("");
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const { user, token, logout } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
-    if (!token) { location.href="/login"; return; }
-    const savedName = localStorage.getItem("name");
-    if (savedName) setDoctorName(savedName);
-    
-    api("/patients","GET",undefined,token)
-      .then(setPatients)
-      .catch(()=>location.href="/login");
-  }, []);
+    if (token) {
+      api("/patients","GET",undefined,token)
+        .then(setPatients)
+        .catch((error) => {
+          console.error("Failed to fetch patients:", error);
+        });
+    }
+  }, [token]);
 
   async function addPatient() {
     if (!name.trim()) return;
@@ -42,7 +44,7 @@ export default function Patients() {
   async function newChat(patientId: string) {
     try {
       const c = await api(`/chats?patient_id=${patientId}`,"POST",undefined, token!);
-      location.href = `/chat/${c.id}`;
+      router.push(`/chat/${c.id}`);
     } catch (error) {
       alert("Failed to create chat");
     }
@@ -51,10 +53,15 @@ export default function Patients() {
   async function newGeneralChat() {
     try {
       const c = await api(`/chats/general`,"POST",undefined, token!);
-      location.href = `/chat/${c.id}`;
+      router.push(`/chat/${c.id}`);
     } catch (error) {
       alert("Failed to create general chat");
     }
+  }
+
+  function handleLogout() {
+    logout();
+    router.push('/login');
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -71,9 +78,9 @@ export default function Patients() {
             <h1 className="text-2xl font-bold" style={{ color: 'var(--primary-color)' }}>
               👥 Patient Management
             </h1>
-            {doctorName && (
+            {user && (
               <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-                Welcome, {doctorName}
+                Welcome, Dr. {user.name}
               </p>
             )}
           </div>
@@ -87,6 +94,12 @@ export default function Patients() {
             <Link href="/" className="btn btn-secondary">
               🏠 Home
             </Link>
+            <button 
+              className="btn btn-danger"
+              onClick={handleLogout}
+            >
+              🚪 Logout
+            </button>
           </div>
         </div>
       </div>
@@ -211,3 +224,5 @@ export default function Patients() {
     </div>
   );
 }
+
+export default withAuth(Patients);
