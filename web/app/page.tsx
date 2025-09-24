@@ -33,7 +33,7 @@ export default function HomePage() {
         
         <div className="flex gap-4 justify-center">
           <Link href="/login" className="btn btn-primary">
-            🔑 Get Started
+            💬 Chat
           </Link>
           
           <Link href="/patients" className="btn btn-secondary">

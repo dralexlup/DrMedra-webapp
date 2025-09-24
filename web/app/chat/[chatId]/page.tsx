@@ -235,8 +235,8 @@ export default function Chat({ params }: { params: { chatId: string } }) {
         <div style={{ padding: '1rem', height: '100%', display: 'flex', flexDirection: 'column' }}>
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-semibold">Conversations</h3>
-            <Link href="/patients" className="btn btn-secondary" style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}>
-              👥 Patients
+            <Link href="/" className="btn btn-secondary" style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}>
+              🏠 Home
             </Link>
           </div>
           

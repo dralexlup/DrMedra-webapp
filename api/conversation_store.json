@@ -69,5 +69,45 @@
         "treatment"
       ]
     }
+  },
+  "7e6caf13-4cd7-4ba1-8d85-7d7c5adec782": {
+    "94385d43-eb51-4505-bd93-a18aeb7ddf37_2025-09-24T15:13:23.087216": {
+      "chat_id": "94385d43-eb51-4505-bd93-a18aeb7ddf37",
+      "patient_id": null,
+      "patient_name": null,
+      "role": "user",
+      "text": "Hey Medra. This is a test run to see how you handle conversations",
+      "timestamp": "2025-09-24T15:13:23.087236",
+      "keywords": []
+    },
+    "94385d43-eb51-4505-bd93-a18aeb7ddf37_2025-09-24T15:13:35.759926": {
+      "chat_id": "94385d43-eb51-4505-bd93-a18aeb7ddf37",
+      "patient_id": null,
+      "patient_name": null,
+      "role": "assistant",
+      "text": "Okay! Hi there. I understand this is a test run. I'm ready to do my best to assist you as a medical assistant. \n\nPlease feel free to ask me anything \u00e2\u0080\u0093 I'll do my best to provide helpful and accurate information, keeping in mind that **I am an AI and cannot provide medical advice. My responses are for informational purposes only and should not replace a consultation with a qualified healthcare professional.**\n\nJust let me know what you'd like to discuss. I can help with things like:\n\n*   Explaining medical terminology\n*   Providing information about common conditions (but always emphasizing the need to consult a doctor)\n*   Helping you understand test results (again, not interpreting them - just explaining what the tests *are*)\n*   Answering questions about appointment preparation\n*   And more!\n\nI'm looking forward to seeing how I can help. Just let me know what you have in mind! \u00f0\u009f\u0098\u008a\n\n\n\n",
+      "timestamp": "2025-09-24T15:13:35.759936",
+      "keywords": [
+        "terminology"
+      ]
+    },
+    "94385d43-eb51-4505-bd93-a18aeb7ddf37_2025-09-24T15:13:55.256428": {
+      "chat_id": "94385d43-eb51-4505-bd93-a18aeb7ddf37",
+      "patient_id": null,
+      "patient_name": null,
+      "role": "user",
+      "text": "I've uploaded a voice message. Please listen to it and provide a medical response based on what you hear. If you cannot process audio directly, please let me know and I can provide a text transcription.",
+      "timestamp": "2025-09-24T15:13:55.256435",
+      "keywords": []
+    },
+    "94385d43-eb51-4505-bd93-a18aeb7ddf37_2025-09-24T15:14:04.135411": {
+      "chat_id": "94385d43-eb51-4505-bd93-a18aeb7ddf37",
+      "patient_id": null,
+      "patient_name": null,
+      "role": "assistant",
+      "text": "You are absolutely right to point that out! As an AI, I **cannot directly process audio files** like voice messages. My capabilities are currently limited to text-based interactions.\n\nTherefore, **please do provide a text transcription of the voice message.** Once you paste the text here, I will be happy to listen to it and provide a medical response based on what you've shared.\n\nI understand this might be a little inconvenient, and I apologize for that limitation. I'm still under development, and the ability to process audio is something we are working on.\n\nJust paste the text when you're ready, and I'll do my best to assist you.",
+      "timestamp": "2025-09-24T15:14:04.135423",
+      "keywords": []
+    }
   }
 }

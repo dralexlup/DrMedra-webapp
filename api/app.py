@@ -281,6 +281,9 @@ def list_chats(patient_id: Optional[str] = None, doctor_id: str = Depends(get_do
     if patient_id:
         # Get chats for specific patient
         query = query.filter_by(patient_id=patient_id)
+    else:
+        # If no patient_id specified, only get patient-specific chats (exclude general chats)
+        query = query.filter(Chat.is_general != "true")
     
     cs = query.order_by(Chat.created_at.desc()).all()
     return [{
