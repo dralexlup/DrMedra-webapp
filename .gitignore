@@ -1,0 +1,59 @@
+# Environment variables
+.env
+.env.local
+.env.production
+.env.staging
+
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Python virtual environment
+api/.venv/
+api/venv/
+api/__pycache__/
+api/**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Storage/uploads
+api/storage/
+
+# Logs
+*.log
+logs/
+
+# Next.js
+web/.next/
+web/out/
+
+# Build outputs
+web/build/
+api/dist/
+api/build/
+
+# IDE/Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
