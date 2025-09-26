@@ -1,0 +1,11 @@
+language = "python3"
+
+[nix]
+channel = "stable-22_11"
+
+[deployment]
+run = ["sh", "-c", "cd api && python app.py"]
+
+[[ports]]
+localPort = 8000
+externalPort = 80
