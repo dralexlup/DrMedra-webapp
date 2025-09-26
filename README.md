@@ -52,6 +52,24 @@ AI-powered medical assistant platform with real-time consultations, patient mana
 - Node.js 18+ with npm
 - AI Model Endpoint (vLLM, OpenAI API, etc.)
 
+### System Dependencies (Ubuntu/Debian)
+Before installing Python packages, install required system dependencies:
+```bash
+# Update package list
+sudo apt update
+
+# Install required system packages for Python compilation
+sudo apt install -y build-essential libpq-dev python3-dev
+
+# Optional: Install PostgreSQL client libraries if using PostgreSQL
+sudo apt install -y postgresql-client
+```
+
+**Why these packages are needed:**
+- `build-essential`: Contains GCC compiler and other tools needed to compile Python packages
+- `libpq-dev`: PostgreSQL development headers (required for psycopg2)
+- `python3-dev`: Python development headers needed for compiling C extensions
+
 ### 1. Clone the Repository
 ```bash
 git clone https://github.com/dralexlup/DrMedra-webapp.git
@@ -61,6 +79,10 @@ cd DrMedra-webapp
 ### 2. Backend Setup
 ```bash
 cd api
+
+# Make sure system dependencies are installed (see above)
+# If you haven't installed them yet:
+# sudo apt install -y build-essential libpq-dev python3-dev
 
 # Create virtual environment
 python -m venv .venv
