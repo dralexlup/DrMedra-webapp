@@ -17,4 +17,4 @@ RUN mkdir -p storage
 EXPOSE 8000
 
 # Use gunicorn for production
-CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "app:app", "--bind", "0.0.0.0:8000"]
+CMD gunicorn -w 4 -k uvicorn.workers.UvicornWorker app:app --bind 0.0.0.0:$PORT
