@@ -4,8 +4,13 @@ language = "python3"
 channel = "stable-22_11"
 
 [deployment]
-run = ["sh", "-c", "cd api && python app.py"]
+run = ["python3", "main.py"]
 
 [[ports]]
 localPort = 8000
 externalPort = 80
+
+[env]
+JWT_SECRET = "replit-secret-key-change-in-production-2024"
+MODEL_ENDPOINT = "https://api.openai.com/v1/chat/completions"
+PORT = "8000"
