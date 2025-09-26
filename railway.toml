@@ -2,7 +2,7 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "cd api && python app.py"
+startCommand = "python main.py"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "always"
