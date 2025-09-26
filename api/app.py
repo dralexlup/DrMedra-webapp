@@ -485,18 +485,25 @@ def stream_generate(body: GenerateBody, doctor_id: str = Depends(get_doctor_id),
         messages.append({"role": "user", "content": user_content})
 
     payload = {
-        "model": "google/gemma-3n-e4b",  # Using available Gemma model
+        "model": "gpt-3.5-turbo",  # OpenAI model for production
         "messages": messages,
         "temperature": body.temperature,
         "max_tokens": body.max_tokens,
         "stream": True
     }
+    
+    # Add API key header if using OpenAI
+    headers = {"Content-Type": "application/json"}
+    if "openai.com" in MODEL_ENDPOINT:
+        api_key = os.getenv("OPENAI_API_KEY")
+        if api_key and api_key != "your-openai-api-key-here":
+            headers["Authorization"] = f"Bearer {api_key}"
 
     # 4) stream from model endpoint and tee to client + DB
     def gen():
         buf = []
         try:
-            with requests.post(MODEL_ENDPOINT, json=payload, stream=True, timeout=600) as r:
+            with requests.post(MODEL_ENDPOINT, json=payload, headers=headers, stream=True, timeout=600) as r:
                 r.raise_for_status()
                 for line in r.iter_lines(decode_unicode=True):
                     if not line.strip(): continue
@@ -529,10 +536,15 @@ def stream_generate(body: GenerateBody, doctor_id: str = Depends(get_doctor_id),
                             yield f"data: {token}\n\n"
                             
         except Exception as e:
-            # If model endpoint fails, yield error message
-            error_msg = f"Model endpoint error: {str(e)}"
-            buf.append(error_msg)
-            yield f"data: {error_msg}\n\n"
+            # If model endpoint fails, yield demo response
+            if "openai.com" in MODEL_ENDPOINT and (not os.getenv("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY") == "your-openai-api-key-here"):
+                demo_response = "🏥 **Demo Mode**: This is a simulated AI response. To enable real AI responses, add your OpenAI API key to the environment variables. Based on your query, I can help with medical consultations, patient management, and health-related questions."
+                buf.append(demo_response)
+                yield f"data: {demo_response}\n\n"
+            else:
+                error_msg = f"Model endpoint error: {str(e)}"
+                buf.append(error_msg)
+                yield f"data: {error_msg}\n\n"
         
         # persist assistant message with patient info
         text = "".join(buf)
