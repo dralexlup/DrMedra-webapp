@@ -1,0 +1,17 @@
+language = "python3"
+
+[nix]
+channel = "stable-22_11"
+
+[deployment]
+run = ["python3", "main.py"]
+
+[[ports]]
+localPort = 8000
+externalPort = 80
+
+[env]
+JWT_SECRET = "replit-secret-key-change-in-production-2024"
+MODEL_ENDPOINT = "https://api.openai.com/v1/chat/completions"
+OPENAI_API_KEY = "your-openai-api-key-here"
+PORT = "8000"
