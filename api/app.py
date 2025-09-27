@@ -23,13 +23,48 @@ os.makedirs("storage", exist_ok=True)
 
 app = FastAPI(title="Medra API")
 
-# Add CORS middleware for frontend
+# CORS configuration for frontend access
+# Allow origins from environment variable or default to development origins
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,http://127.0.0.1:3001").split(",")
+
+# Add production origins if in production
+if os.getenv("ENVIRONMENT") == "production":
+    production_origins = os.getenv("PRODUCTION_ORIGINS", "").split(",")
+    allowed_origins.extend([origin for origin in production_origins if origin.strip()])
+else:
+    # In development, be more permissive but still secure
+    dev_origins = [
+        "http://localhost:3000",
+        "http://localhost:3001", 
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+        "http://localhost:8000",  # For API docs access
+        "http://127.0.0.1:8000"   # For API docs access
+    ]
+    allowed_origins.extend(dev_origins)
+
+# Remove duplicates and empty strings
+allowed_origins = list(set([origin.strip() for origin in allowed_origins if origin.strip()]))
+
+print(f"🌐 CORS allowed origins: {allowed_origins}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001"],  # Next.js dev servers
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=[
+        "*",
+        "Authorization",
+        "Content-Type",
+        "Accept", 
+        "Origin",
+        "X-Requested-With",
+        "Access-Control-Request-Method",
+        "Access-Control-Request-Headers",
+    ],
+    expose_headers=["*"],
+    max_age=3600,  # Cache preflight requests for 1 hour
 )
 
 init_db()
@@ -577,6 +612,21 @@ def stream_generate(body: GenerateBody, doctor_id: str = Depends(get_doctor_id),
 @app.get("/test")
 def test_endpoint():
     return {"message": "Test endpoint working"}
+
+# CORS test endpoint
+@app.get("/cors-test")
+def cors_test():
+    """Test endpoint to verify CORS is working correctly"""
+    return {
+        "message": "CORS is working correctly!", 
+        "timestamp": datetime.utcnow().isoformat(),
+        "cors_configured": True
+    }
+
+@app.options("/cors-test")
+def cors_test_options():
+    """Handle preflight OPTIONS requests"""
+    return {"message": "CORS preflight successful"}
 
 # Health check
 @app.get("/health")

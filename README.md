@@ -186,7 +186,35 @@ JWT_SECRET=your-secret-key-here
 MODEL_ENDPOINT=http://127.0.0.1:1234/v1/chat/completions
 PORT=8000
 DB_URL=sqlite:///./medra.db  # Optional, defaults to SQLite
+
+# CORS Configuration (optional)
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001  # Comma-separated
+ENVIRONMENT=development  # or 'production'
+PRODUCTION_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
 ```
+
+### CORS Configuration
+The application automatically handles CORS (Cross-Origin Resource Sharing) for frontend access:
+
+**Development Mode** (default):
+- Automatically allows `localhost:3000`, `localhost:3001`, `127.0.0.1:3000`, `127.0.0.1:3001`
+- Includes API documentation access on port 8000
+
+**Production Mode**:
+```env
+ENVIRONMENT=production
+PRODUCTION_ORIGINS=https://yourdomain.com,https://api.yourdomain.com
+```
+
+**Custom Origins**:
+```env
+ALLOWED_ORIGINS=http://localhost:3000,http://192.168.1.100:3000
+```
+
+**CORS Troubleshooting**:
+- Test CORS: `GET http://localhost:8000/cors-test`
+- Check browser console for CORS errors
+- Verify frontend URL matches allowed origins exactly
 
 ### Frontend Environment Variables
 ```env
