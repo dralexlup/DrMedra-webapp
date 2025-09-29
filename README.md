@@ -136,6 +136,31 @@ vllm serve google/gemma-2-2b-it --host 127.0.0.1 --port 1234
 - **API**: http://localhost:8000
 - **API Docs**: http://localhost:8000/docs
 
+## 🌐 Network Configuration
+
+**Important**: The above setup works when both frontend and backend are on the same machine. For different network setups:
+
+### Different Machines/IPs
+If your backend is running on a different machine (e.g., `192.168.2.102`):
+
+1. **Frontend configuration** (`web/.env.local`):
+   ```env
+   NEXT_PUBLIC_API_BASE=http://192.168.2.102:8000
+   ```
+
+2. **Backend configuration** (`api/.env`):
+   ```env
+   ALLOWED_ORIGINS=http://192.168.2.105:3000,http://localhost:3000
+   ```
+   *(Replace `192.168.2.105` with your frontend machine's IP)*
+
+3. **Restart both services** after changing environment variables
+
+### 📖 Detailed Network Setup Guide
+For comprehensive network configuration including Docker, production, and troubleshooting:
+
+👉 **See [NETWORK_SETUP.md](NETWORK_SETUP.md)** for detailed configuration examples
+
 ## 📆 Usage Guide
 
 ### Getting Started
@@ -218,8 +243,21 @@ ALLOWED_ORIGINS=http://localhost:3000,http://192.168.1.100:3000
 
 ### Frontend Environment Variables
 ```env
+# For same-machine development
 NEXT_PUBLIC_API_BASE=http://localhost:8000
+
+# For network/LAN setup (replace with backend IP)
+# NEXT_PUBLIC_API_BASE=http://192.168.2.102:8000
+
+# For production
+# NEXT_PUBLIC_API_BASE=https://api.yourdomain.com
 ```
+
+**Important Notes:**
+- Frontend environment variables must start with `NEXT_PUBLIC_`
+- Restart the frontend development server after changing `.env.local`
+- The URL should point to where your backend API is actually running
+- In production, use HTTPS URLs
 
 ## 🤖 Supported AI Models
 
