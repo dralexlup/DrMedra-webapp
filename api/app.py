@@ -25,6 +25,11 @@ os.makedirs("storage", exist_ok=True)
 
 app = FastAPI(title="Medra API")
 
+# Health probe for the webapp and monitors
+@app.get("/healthz")
+def healthz():
+    return {"ok": True}
+
 # CORS configuration for frontend access
 # Allow origins from environment variable (required in production)
 allowed_origins_env = os.getenv("ALLOWED_ORIGINS")
@@ -612,7 +617,15 @@ def stream_generate(body: GenerateBody, doctor_id: str = Depends(get_doctor_id),
             )
         yield "event: end\ndata: [DONE]\n\n"
 
-    return StreamingResponse(gen(), media_type="text/event-stream")
+    return StreamingResponse(
+        gen(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )
 
 # Test endpoint for debugging
 @app.get("/test")
