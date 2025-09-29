@@ -17,15 +17,21 @@ from dotenv import load_dotenv
 
 load_dotenv()  # Load environment variables from .env file
 
-MODEL_ENDPOINT = os.getenv("MODEL_ENDPOINT", "http://127.0.0.1:1234/v1/chat/completions")
+MODEL_ENDPOINT = os.getenv("MODEL_ENDPOINT")
+if not MODEL_ENDPOINT:
+    raise ValueError("MODEL_ENDPOINT environment variable is required. Please set it in your .env file.")
 PORT = int(os.getenv("PORT", "8000"))
 os.makedirs("storage", exist_ok=True)
 
 app = FastAPI(title="Medra API")
 
 # CORS configuration for frontend access
-# Allow origins from environment variable or default to development origins
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,http://127.0.0.1:3001").split(",")
+# Allow origins from environment variable (required in production)
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS")
+if allowed_origins_env:
+    allowed_origins = allowed_origins_env.split(",")
+else:
+    allowed_origins = []
 
 # Add production origins if in production
 if os.getenv("ENVIRONMENT") == "production":
